@@ -146,53 +146,39 @@ namespace csFSH {
 
 
 
-        public static Image Blend(BitmapItem bitmapItem) {
+        /// <summary>
+        /// Blends the color/base bitmap with the alpha bitmap to create a transparent Image.
+        /// </summary>
+        /// <returns>A transparent Image</returns>
+        public static Image<Rgba32> Blend(BitmapItem bitmapItem) {
             return Blend(bitmapItem.Alpha, bitmapItem.Color);
         }
-
         /// <summary>
-        /// Blends the color/base bitmap with the alpha bitmap to create a transparent bitmap.
+        /// Blends the color/base bitmap with the alpha bitmap to create a transparent Image.
         /// </summary>
-        /// <returns></returns>
-        ///<remarks>Originally decompiled from BlendBmp.dll from <see ref="https://community.simtropolis.com/files/file/35279-fsh-converter-tool/">FSH Converter Tool</see>. Updated for cross platform interoperability.</remarks>
-        public static unsafe Image Blend(Image alphaBmp, Image baseBmp) {
-            Image blendedBmp;
-            if (baseBmp is null || alphaBmp is null) {
-                return null;
-            }
-            blendedBmp = new Image<Argb32>(baseBmp.Width, baseBmp.Height);
+        /// <returns>A transparent Image</returns>
+        /// <see ref="https://docs.sixlabors.com/articles/imagesharp/pixelbuffers.html#efficient-pixel-manipulation"/>
+        public static Image<Rgba32> Blend(Image<Rgba32> baseBmp, Image<Rgba32> alphaBmp) {
+            int transparency;
+            Image<Rgba32> blendedBmp = baseBmp;
+            blendedBmp.ProcessPixelRows(alphaBmp, (baseAccessor, alphaAccessor) => {
+                for (int y = 0; y < baseAccessor.Height; y++) {
+                    Span<Rgba32> baseRow = baseAccessor.GetRowSpan(y);
+                    Span<Rgba32> alphaRow = alphaAccessor.GetRowSpan(y);
 
-            //BitmapData colorBmpData = colorBmp.LockBits(new Rectangle(0, 0, blendedBmp.Width, blendedBmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-            //BitmapData alphaBmpData = alphaBmp.LockBits(new Rectangle(0, 0, blendedBmp.Width, blendedBmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-            //BitmapData blendedBmpData = blendedBmp.LockBits(new Rectangle(0, 0, blendedBmp.Width, blendedBmp.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-            byte test = 0;
-            test[0] = 1;
-
-            IntPtr scan0_blend = blendedBmpData.Scan0; //Gets or sets the address of the first pixel data in the bitmap. This can also be thought of as the first scan line in the bitmap.
-            byte* scan0_color = (byte*) (void*) colorBmpData.Scan0;
-            byte* scan0_alpha = (byte*) (void*) alphaBmpData.Scan0;
-            byte* numPtr = (byte*) (void*) scan0_blend;
-            //int numBlended = blendedBmpData.Stride - blendedBmp.Width * 4; //stride = width of a single row of pixels (scan line), rounded up to a 4 byte boundary.
-            //int numColor = colorBmpData.Stride - blendedBmp.Width * 4;
-            //int numAlpha = alphaBmpData.Stride - blendedBmp.Width * 4;
-            for (int y = 0; y < blendedBmp.Height; ++y) {
-                for (int x = 0; x < blendedBmp.Width; ++x) {
-                    numPtr[3] = *scan0_alpha;
-                    *numPtr = *scan0_color;
-                    numPtr[1] = scan0_color[1];
-                    numPtr[2] = scan0_color[2];
-                    numPtr += 4;
-                    scan0_color += 4;
-                    scan0_alpha += 4;
-                    numPtr[0] += 1;
+                    for (int x = 0; x < baseRow.Length; x++) {
+                        ref Rgba32 basepixel = ref baseRow[x];
+                        if (alphaRow[x] == (Rgba32) Color.Black) {
+                            basepixel = Color.Transparent;
+                        } else if (alphaRow[x] != (Rgba32) Color.White) {
+                            //alpha layers should be grayscale, but if not adjust by the average color of the pixel
+                            transparency = (alphaRow[x].R + alphaRow[x].G + alphaRow[x].B) / 3;
+                            basepixel = new Rgba32(basepixel.R, basepixel.G, basepixel.B, transparency);
+                        }
+                    }
                 }
-                //numPtr += numBlended;
-                //scan0_color += numColor;
-                //scan0_alpha += numAlpha;
-            }
-            //colorBmp.UnlockBits(colorBmpData);
-            //alphaBmp.UnlockBits(alphaBmpData);
-            //blendedBmp.UnlockBits(blendedBmpData);
+            });
+
             return blendedBmp;
         }
     }

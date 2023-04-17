@@ -14,11 +14,11 @@ namespace csFSH {
         /// <summary>
         /// Color (base) bitmap.
         /// </summary>
-        public Image Color { get; set; }
+        public Image<Rgba32> Color { get; set; }
         /// <summary>
         /// Alpha (transparency) bitmap.
         /// </summary>
-        public Image Alpha { get; set; }
+        public Image<Rgba32> Alpha { get; set; }
         /// <summary>
         /// Defines the bitmap type of this item.
         /// </summary>

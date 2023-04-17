@@ -7,7 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.0" />
+    <Compile Remove="FSHImage_OLD.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="FSHImage_OLD.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.1" />
   </ItemGroup>
 
   <ItemGroup>
